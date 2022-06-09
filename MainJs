@@ -1,1 +1,12 @@
-Pagina Main JS
+var fetchUrl = require("fetch").fetchUrl;
+
+
+// CSS DESIGN
+const gameDoc = document.getElementsByClassName('gameframe')[0].contentDocument;
+
+fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/Design", function(error, meta, body){
+    if (body && body.toString() != "") {
+        let designScript = body.toString();
+        //gameDoc.head.insertAdjacentHTML("beforeend", designScript);
+    }
+});
