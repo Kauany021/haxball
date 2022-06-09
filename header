@@ -29,11 +29,11 @@
         background: rgb(15, 15, 15);
     }
 
-    body > div.container.flexCol {
+    body .flexCol {
         position: relative;
         height: calc(100% - 35px);
         width: 100%;
-        
+
     }
 
     .overflowhidden {
