@@ -1,1 +1,3 @@
-Pagina de Design
+body {
+    background: #0f0f0f url(https://i.ibb.co/DfbFZ5L/haxballlogo.png) fixed;
+}
