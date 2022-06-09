@@ -363,6 +363,10 @@ VAR_fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/header", 
             VAR_LoadAnimations();
         });
 
+        // TUDO RECARREGADO
+        setTimeout(() => {
+            ipcRenderer.send("gameModifyLoaded");
+        }, 3000);
     }
 });
 
