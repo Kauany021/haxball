@@ -15,4 +15,4 @@ fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/Design", func
 document.querySelector("body > div > div.header").remove();
 
 // REMOVE ADS
-gameDoc.getElementById("wrapper").remove();
+gameDoc.querySelector("#wrapper").remove();
