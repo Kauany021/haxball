@@ -1,0 +1,271 @@
+<header>
+    <img src="https://i.ibb.co/DfbFZ5L/haxballlogo.png">
+    <ul>
+        <div class="resetButton">RESETAR</div>
+        <div class="createAnimButton">NOVA ANIMAÇÃO</div>
+        <div class="saveButton">SALVAR</div>
+        <div id="animationsButton">ANIMAÇÕES</div>
+        <div id="closeButton"></div>
+    </ul>
+</header>
+
+<div class="main">
+    <div>
+        <ul class="list">
+        </ul>
+    </div>
+</div>
+
+<style>
+    * {
+        user-select: none;
+    }
+
+    body {
+        background: rgb(15, 15, 15);
+    }
+
+    .overflowhidden {
+        overflow: auto;
+    }
+
+    .main {
+        margin-top: 40px;
+        position: absolute;
+        z-index: 9000;
+        display: none;
+        background-color: rgb(15, 15, 15);
+        width: 100%;
+        height: calc(100% - 40px);
+    }
+
+    .createAnimButton:hover {
+        background-color: rgb(92, 172, 226);
+    }
+
+    .list {
+        height: 100%;
+        display: block;
+    }
+
+    .anim {
+        padding-bottom: 5px;
+        align-items: center;
+        display: none;
+        width: fit-content;
+        padding-right: auto;
+        margin-right: 0px;
+        height: 30px;
+    }
+
+    .anim #name {
+        border: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-family: "Calibri";
+        background-color: rgb(45, 45, 45);
+        color: rgb(223, 122, 122);
+        height: 100%;
+        width: fit-content;
+        font-size: 100;
+        padding-right: 10px;
+        padding-left: 10px;
+        margin-right: 10px;
+        text-align: center;
+        user-select: none;
+    }
+
+    .anim .keyframe {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        height: 100%;
+        background-color: rgb(34, 34, 34);
+        border-radius: 30px;
+        width: fit-content;
+        padding-right: 20px;
+        padding-left: 20px;
+        margin-right: 10px;
+        text-align: center;
+        user-select: none;
+    }
+
+    .anim #addKF {
+        display: flex;
+        font-family: "Calibri";
+        border: 0px;
+        order: 100;
+        background-color: rgb(197, 90, 90);
+        color: rgb(255, 255, 255);
+        width: 20px;
+        height: 20px;
+        border-radius: 100%;
+        margin-right: 20px;
+        text-align: center;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    .anim .keyframe #seconds::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .anim .keyframe #seconds {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        border: 0px;
+        background-color: rgba(0, 0, 0, 0);
+        color: rgb(255, 255, 255);
+        width: 25px;
+        margin-right: 20px;
+        text-align: center;
+        user-select: none;
+    }
+
+    .anim .keyframe #value {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        border: 0px;
+        background-color: rgba(0, 0, 0, 0);
+        color: rgb(255, 255, 255);
+        width: 25px;
+        text-align: center;
+        user-select: none;
+    }
+
+    header {
+        background: rgb(24, 24, 24);
+        position: fixed;
+        width: 100%;
+        height: 35px;
+        z-index: 10000;
+        display: flex;
+        -webkit-app-region: drag;
+        align-items: center;
+    }
+
+    header img {
+        padding-left: 20px;
+        position: relative;
+        height: 70%;
+        object-fit: cover;
+    }
+
+    header ul {
+        -webkit-app-region: drag;
+        position: relative;
+        margin-left: auto;
+        height: 100%;
+        margin-right: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    header ul #animationsButton {
+        -webkit-app-region: no-drag;
+        background: linear-gradient(20deg, rgb(145, 5, 5) 40%, rgb(255, 0, 0) 80%);
+        display: flex;
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        font-size: 15px;
+        width: fit-content;
+        padding-left: 10px;
+        padding-right: 10px;
+        height: 75%;
+        user-select: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+    }
+
+    header ul #animationsButton:hover {
+        background: linear-gradient(20deg, rgb(247, 247, 247) 40%, rgb(196, 196, 196) 80%);
+        color: black;
+    }
+
+    
+
+    #closeButton {
+        -webkit-app-region: no-drag;
+        position: relative;
+        cursor: pointer;
+        background: linear-gradient(20deg, rgb(145, 5, 5) 40%, rgb(255, 0, 0) 80%);
+        display: flex;
+        height: 20px;
+        width: 20px;
+        border-radius: 100%;
+        margin-left: 15px;
+    }
+</style>
+<style>
+    .saveButton {
+        -webkit-app-region: no-drag;
+        background-color: rgb(35, 35, 35);
+        display: none;
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        font-size: 15px;
+        margin-right: 10px;
+        width: 100px;
+        height: 75%;
+        user-select: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .resetButton {
+        -webkit-app-region: no-drag;
+        background-color: rgb(165, 38, 38);
+        display: none;
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        font-size: 15px;
+        margin-right: 10px;
+        width: 100px;
+        height: 75%;
+        user-select: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .resetButton:hover {
+        background-color: rgb(200,0,0);
+    }
+
+    .createAnimButton {
+        -webkit-app-region: no-drag;
+        background-color: rgb(196, 196, 196);
+        display: none;
+        position: relative;
+        justify-content: center;
+        align-items: center;
+        font-family: "Calibri";
+        font-size: 15px;
+        margin-right: 10px;
+        width: fit-content;
+        padding-left: 10px;
+        padding-right: 10px;
+        height: 75%;
+        user-select: none;
+        border-radius: 5px;
+        color: rgb(46, 46, 46);
+        cursor: pointer;
+    }
+</style>
