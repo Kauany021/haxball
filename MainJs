@@ -14,7 +14,11 @@ fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/Design", func
 // REMOVE HEADER
 document.querySelector("body > div > div.header").remove();
 
-gameDoc.querySelector("#wrapper").remove();
-
-
+async function START() {
+    setTimeout(() => {
+        console.log("foiceeee");
+        gameDoc.querySelector("#wrapper").remove();
+    }, 1000*5);
+}
+START();
 
