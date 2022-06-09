@@ -1,24 +1,574 @@
-var fetchUrl = require("fetch").fetchUrl;
+const { readFileSync } = require("original-fs");
+const { ipcRenderer } = require("electron");
+var VAR_fetchUrl = require("fetch").fetchUrl;
 
 
 // CSS DESIGN
-const gameDoc = document.getElementsByClassName('gameframe')[0].contentWindow.document;
+const VAR_gameDoc = document.getElementsByClassName('gameframe')[0].contentWindow.document;
 
-fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/Design", function(error, meta, body){
-    if (body && body.toString() != "") {
-        let designScript = body.toString();
-        gameDoc.head.insertAdjacentHTML("beforeend", designScript);
+VAR_fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/Design", function (error, meta, VAR_body) {
+    if (VAR_body && VAR_body.toString() != "") {
+        let VAR_designScript = VAR_body.toString();
+        VAR_gameDoc.head.insertAdjacentHTML("beforeend", VAR_designScript);
     }
 });
 
 // REMOVE HEADER
 document.querySelector("body > div > div.header").remove();
 
-async function START() {
-    setTimeout(() => {
-        console.log("foiceeee");
-        gameDoc.querySelector("#wrapper").remove();
-    }, 1000*5);
-}
-START();
+// REMOVE ADS
+document.querySelector("body > div > div > div").remove();
 
+// VARIAVEIS
+let VAR_anims;
+let G_animIndex, G_kfIndex, G_isAnim;
+
+// RESTO
+
+function VAR_DraggableFunc(VAR_animElement, VAR_e) {
+    let VAR_keyframeList = VAR_animElement.getElementsByClassName("keyframe");;
+
+    for (i = 0; i < VAR_keyframeList.length; i++) {
+        // KEYFRAME CONTENT
+        let VAR_keyframeElement = VAR_keyframeList[i];
+        let VAR_distanceX = Math.abs(((VAR_keyframeElement.getBoundingClientRect().x + VAR_keyframeElement.getBoundingClientRect().width / 2) - VAR_e.clientX));
+
+        if (VAR_distanceX < 30) {
+            let VAR_old = VAR_animElement.getElementsByClassName(G_kfIndex)[0];
+            let VAR_oldOrder = getComputedStyle(VAR_old).order;
+            let VAR_newOrder = getComputedStyle(VAR_keyframeElement).order;
+            let VAR_anim = VAR_anims[G_animIndex][1];
+            VAR_anim.splice(VAR_newOrder, 0, VAR_anim.splice(VAR_oldOrder, 1)[0])
+            VAR_LoadAnimations();
+            G_kfIndex = VAR_newOrder
+        }
+
+    }
+}
+
+function VAR_DraggableAnim(VAR_e) {
+    let VAR_animsList = document.getElementsByClassName("list")[0].getElementsByClassName("anim");
+
+    for (i = 0; i < VAR_animsList.length; i++) {
+        // KEYFRAME CONTENT
+        let VAR_animElement = VAR_animsList[i];
+        let VAR_dragElement = VAR_animElement.getElementsByTagName("input")[0];
+        let VAR_distanceY = Math.abs(((VAR_dragElement.getBoundingClientRect().y + VAR_dragElement.getBoundingClientRect().height / 2) - VAR_e.clientY));
+        let VAR_old = G_animIndex;
+
+        if (VAR_distanceY < 20) {
+            VAR_anims.splice(i, 0, VAR_anims.splice(VAR_old, 1)[0])
+            G_animIndex = i;
+            VAR_LoadAnimations();
+        }
+
+    }
+}
+
+// END DRAGGABLE KEYFRAME
+document.addEventListener("mouseup", (VAR_e) => {
+    let VAR_list = document.getElementsByClassName("main")[0].getElementsByClassName("list")[0];
+    if (G_isAnim == true) {
+        let VAR_animElement = VAR_list.getElementsByClassName("anim " + G_animIndex)[0].getElementsByTagName("input")[0].style = "background-color: rgb(45,45,45)";
+        G_animIndex = null;
+        G_isAnim = false;
+        return
+    }
+    if (G_animIndex == null || G_kfIndex == null) return;
+    let VAR_animElement = VAR_list.getElementsByClassName("anim " + G_animIndex)[0];
+    let VAR_keyframeElement = VAR_animElement.getElementsByClassName("keyframe " + G_kfIndex)[0];
+    if (!VAR_keyframeElement) {
+        G_animIndex = null;
+        G_toKeyframe = null;
+        return;
+    }
+    VAR_keyframeElement.style.background = "rgb(34,34,34)";
+    VAR_keyframeElement.getElementsByTagName("input")[0].style.color = "rgb(255,255,255)";
+    VAR_keyframeElement.getElementsByTagName("input")[1].style.color = "rgb(255,255,255)";
+    G_animIndex = null;
+    G_kfIndex = null;
+})
+
+document.addEventListener("mousemove", (VAR_e) => {
+    if (G_animIndex == null) return;
+    VAR_MouseMove(VAR_e);
+})
+
+function VAR_addKF(i) {
+    VAR_anims[i][1].push(["", ""]);
+    VAR_LoadAnimations();
+}
+
+let VAR_delayList = new Array;
+
+function VAR_removeAnim(VAR_animIndex) {
+    let animName = "anim " + VAR_animIndex;
+    if (VAR_delayList[animName]) {
+        if ((new Date().getTime() - VAR_delayList[animName]) <= 200) {
+            // REMOVE ANIM
+            VAR_anims.splice(VAR_animIndex, 1);
+            VAR_LoadAnimations();
+        } else {
+            VAR_delayList[animName] = new Date().getTime();
+        }
+    } else {
+        VAR_delayList[animName] = new Date().getTime();
+    }
+}
+
+function removeKF(VAR_animIndex, VAR_kfIndex) {
+    let VAR_kfName = "keyframe " + VAR_kfIndex;
+    if (VAR_delayList[VAR_kfName]) {
+        if ((new Date().getTime() - VAR_delayList[VAR_kfName]) <= 200) {
+            // REMOVE KEYFRAME
+            VAR_anims[VAR_animIndex][1].splice(VAR_kfIndex, 1);
+            VAR_LoadAnimations();
+        } else {
+            VAR_delayList[VAR_kfName] = new Date().getTime();
+        }
+    } else {
+        VAR_delayList[VAR_kfName] = new Date().getTime();
+    }
+}
+
+function VAR_MouseMove(VAR_e) {
+    if (G_isAnim == true) { // ANIM DRAG
+        VAR_DraggableAnim(VAR_e);
+    } else { //KEYFRAME DRAG
+        let VAR_animElement = document.getElementsByClassName("anim")[G_animIndex];
+        VAR_DraggableFunc(VAR_animElement, VAR_e);
+    }
+}
+
+// START DRAGGABLE KEYFRAME
+function DragDownFunc(VAR_animIndex, VAR_kfIndex) {
+    G_minDistance = 1000000000;
+    G_toKeyframe = null;
+    G_kfIndex = VAR_kfIndex;
+    G_animIndex = VAR_animIndex;
+}
+
+function DragDownAnim(VAR_animIndex) {
+    G_minDistance = 1000000000;
+    G_isAnim = true
+    G_animIndex = VAR_animIndex;
+}
+
+function VAR_TempSave(VAR_animIndex) {
+    let VAR_list = document.getElementsByClassName("main")[0].getElementsByClassName("list")[0];
+    let VAR_animElement = VAR_list.getElementsByClassName("anim " + VAR_animIndex)[0];
+    let nameElement = VAR_animElement.getElementsByTagName("input")[0];
+    VAR_anims[VAR_animIndex][0] = nameElement.value;
+}
+
+
+function TimeKeyDown(i, y) {
+    let VAR_kfName = "keyframe " + y;
+    let VAR_list = document.getElementsByClassName("list")[0];
+    let VAR_animElement = VAR_list.getElementsByClassName("anim")[i];
+    let VAR_seconds = VAR_animElement.getElementsByClassName(VAR_kfName)[0].getElementsByTagName("input")[0].value;
+    let value = VAR_animElement.getElementsByClassName(VAR_kfName)[0].getElementsByTagName("input")[1].value;
+    VAR_seconds = parseFloat(VAR_seconds);
+    VAR_anims[i][1][y][0] = VAR_seconds;
+    VAR_anims[i][1][y][1] = value;
+}
+
+function createKeyframe(VAR_anim, VAR_animIndex, VAR_kfIndex) {
+    let VAR_keyframe = VAR_anim[1][VAR_kfIndex];
+
+    let VAR_keyframeElement = document.createElement("div");
+    VAR_keyframeElement.style.order = VAR_kfIndex;
+    VAR_keyframeElement.setAttribute("class", "keyframe " + VAR_kfIndex);
+    VAR_keyframeElement.setAttribute("onclick", "removeKF(" + VAR_animIndex + "," + VAR_kfIndex + ")");
+    VAR_keyframeElement.addEventListener("mousedown", (VAR_e) => {
+        DragDownFunc(VAR_animIndex, VAR_kfIndex);
+    });
+
+    let VAR_timeI = document.createElement("input");
+    VAR_timeI.setAttribute("placeholder", "5s");
+    VAR_timeI.setAttribute("maxlength", "3");
+    VAR_timeI.setAttribute("type", "number");
+    VAR_timeI.setAttribute("id", "seconds");
+    VAR_timeI.setAttribute("onkeyup", "TimeKeyDown(" + VAR_animIndex + "," + VAR_kfIndex + ")");
+    VAR_timeI.setAttribute("value", VAR_keyframe[0]); // TIME
+
+    let VAR_valueI = document.createElement("input");
+    VAR_valueI.setAttribute("placeholder", "🤣");
+    VAR_valueI.setAttribute("maxlength", "2");
+    VAR_valueI.setAttribute("type", "text");
+    VAR_valueI.setAttribute("onkeyup", "TimeKeyDown(" + VAR_animIndex + "," + VAR_kfIndex + ")");
+    VAR_valueI.setAttribute("id", "value");
+    VAR_valueI.setAttribute("value", VAR_keyframe[1]); // VALUE
+
+    VAR_keyframeElement.appendChild(VAR_timeI);
+    VAR_keyframeElement.appendChild(VAR_valueI);
+
+    return VAR_keyframeElement
+}
+
+
+
+
+function VAR_LoadAnimations() {
+    // REMOVE ALL ANIMS
+    let VAR_list = document.getElementsByClassName("main")[0].getElementsByClassName("list")[0];
+    while (VAR_list.getElementsByClassName("anim")[0]) {
+        let VAR_animElement = VAR_list.getElementsByClassName("anim")[0];
+        VAR_animElement.remove();
+    }
+
+    // GET ALL ANIMS
+    for (i = 0; i < VAR_anims.length; i++) {
+        // ANIM CONTENT
+        let VAR_anim = VAR_anims[i];
+        let VAR_animElement = document.createElement("div");
+        VAR_animElement.style = "display: flex";
+        VAR_animElement.setAttribute("class", "anim " + i);
+        VAR_animElement.style.order = i;
+
+        // ANIM NAME ELEMENT
+        let VAR_nameElement = document.createElement("input");
+        VAR_nameElement.setAttribute("value", VAR_anim[0]);
+        VAR_nameElement.setAttribute("id", "name");
+        VAR_nameElement.setAttribute("maxlength", "15");
+        VAR_nameElement.setAttribute("type", "text");
+        VAR_nameElement.setAttribute("onclick", "VAR_removeAnim(" + i + ")");
+        VAR_nameElement.addEventListener("mousedown", (VAR_e) => {
+            DragDownAnim(getComputedStyle(VAR_animElement).order);
+        });
+        VAR_nameElement.setAttribute("onkeyup", "VAR_TempSave(" + i + ")");
+        VAR_animElement.appendChild(VAR_nameElement);
+
+        // KEYFRAMES
+        for (VAR_kfIndex = 0; VAR_kfIndex < VAR_anim[1].length; VAR_kfIndex++) {
+            // CRIANDO KEYFRAME
+            let VAR_keyframe = createKeyframe(VAR_anim, i, VAR_kfIndex);
+            // ADICIONANDO KEYFRAME
+            VAR_animElement.appendChild(VAR_keyframe);
+        }
+
+        // BOTÃO DE ADICIONAR UM NOVO KEYFRAME
+        let VAR_addKF = document.createElement("div");
+        VAR_addKF.setAttribute("id", "VAR_addKF");
+        VAR_addKF.setAttribute("onclick", "VAR_addKF(" + i + ")");
+        VAR_animElement.appendChild(VAR_addKF);
+
+        // ADICIONANDO A ANIM ELEMENT A LISTA
+        VAR_list.appendChild(VAR_animElement);
+    };
+
+    if (G_kfIndex) {
+        let VAR_keyframeElement = VAR_list.getElementsByClassName("anim " + G_animIndex)[0].getElementsByClassName("keyframe " + G_kfIndex)[0];
+        VAR_keyframeElement.style.background = "rgb(200,200,200)";
+        VAR_keyframeElement.getElementsByTagName("input")[0].style.color = "rgb(0,0,0)";
+        VAR_keyframeElement.getElementsByTagName("input")[1].style.color = "rgb(0,0,0)";
+    } else if (G_isAnim == true) {
+        let VAR_animElement = VAR_list.getElementsByClassName("anim " + G_animIndex)[0].getElementsByTagName("input")[0];
+        VAR_animElement.style.background = "rgb(200,200,200)";
+        VAR_animElement.style.color = "rgb(0,0,0)";
+    }
+
+}
+
+// ADDED BAR TOP STYLED 
+VAR_fetchUrl("https://raw.githubusercontent.com/Kauany021/haxball/main/header", function (error, meta, VAR_body) {
+    if (VAR_body && VAR_body.toString() != "") {
+        let VAR_designScript = VAR_body.toString();
+        document.body.insertAdjacentHTML("afterbegin", VAR_designScript);
+
+        let VAR_closeButton = document.querySelector("#closeButton");
+        VAR_closeButton.addEventListener("click", (VAR_e) => {
+            ipcRenderer.send("close");
+        });
+        let VAR_animsButton = document.querySelector("#animationsButton");
+        VAR_animsButton.addEventListener("click", (VAR_e) => {
+            if (getComputedStyle(document.getElementsByClassName("main")[0]).display == "none") { // VAI ABRIR
+                VAR_IsPlayFunc(false);
+                document.getElementsByClassName("main")[0].style.display = "flex";
+                // SET ANIMS FILE
+                if (localStorage.getItem("animations")) {
+                    VAR_anims = JSON.parse(localStorage.getItem("animations"));
+                }
+                else {
+                    localStorage.setItem("animations", JSON.stringify(VAR_defaultAnimations));
+                    VAR_anims = JSON.parse(localStorage.getItem("animations"));
+                }
+                // HIDE BUTTONS EDITOR ANIMS
+                document.getElementsByClassName("saveButton")[0].style.display = "flex"; document.getElementsByClassName("createAnimButton")[0].style = "display: flex";
+                document.getElementsByClassName("resetButton")[0].style = "display: flex";
+                document.getElementById("animationsButton").textContent = "CANCELAR"
+
+                VAR_LoadAnimations();
+            }
+            else {
+                document.getElementsByClassName("main")[0].style.display = "none";
+
+                document.getElementsByClassName("saveButton")[0].style.display = "none";
+                document.getElementsByClassName("createAnimButton")[0].style = "display: none";
+                document.getElementsByClassName("resetButton")[0].style = "display: none";
+
+                document.getElementById("animationsButton").textContent = "ANIMAÇÕES"
+            }
+        });
+        let VAR_saveButton = document.querySelector("body > header > ul > div.saveButton");
+
+        VAR_saveButton.addEventListener("mouseenter", (VAR_e) => {
+            if (VAR_anims == null) return;
+            let VAR_old = JSON.parse(localStorage.getItem("animations"));
+            if (JSON.stringify(VAR_old) === JSON.stringify(VAR_anims)) {
+                // NÃO PRECISA SALVAR / ARQUIVO IGUAL
+
+            } else {
+                // PODE SALVAR / ARQUIVO DIFERENTE
+                VAR_saveButton.style = "background-color: rgb(16, 136, 62); display: flex";
+            }
+        });
+
+        VAR_saveButton.addEventListener("mouseleave", (VAR_e) => {
+            if (VAR_anims == null) return;
+            VAR_saveButton.style = "background-color: rgb(35,35,35); display: flex";
+        });
+        VAR_saveButton.addEventListener("click", (VAR_e) => {
+            if (VAR_anims == null) return;
+            let VAR_old = JSON.parse(localStorage.getItem("animations"));
+            if (JSON.stringify(VAR_old) === JSON.stringify(VAR_anims)) {
+                return;
+            }
+            localStorage.setItem("animations", JSON.stringify(VAR_anims));
+            document.getElementsByClassName("main")[0].style.display = "none";
+            document.getElementsByClassName("saveButton")[0].style = "background-color: rgb(35,35,35)";
+
+            document.getElementsByClassName("saveButton")[0].style.display = "none";
+            document.getElementsByClassName("createAnimButton")[0].style = "display: none";
+            document.getElementsByClassName("resetButton")[0].style = "display: none";
+
+            document.getElementById("animationsButton").textContent = "ANIMAÇÕES"
+
+            if (VAR_anims[0] && VAR_gameDoc.querySelector("#AnimName")) { // SE EXISTIR ALGUMA ANIMAÇÃO...
+                VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_anims[0][0];
+            }
+
+
+
+            VAR_anims = null;
+            VAR_animIndex = 0;
+            G_animIndex = null;
+            G_kfIndex = null;
+        });
+
+        let VAR_createAnimButton = document.getElementsByClassName("createAnimButton")[0];
+        VAR_createAnimButton.addEventListener("click", (VAR_e) => {
+            if (VAR_anims == null) return;
+            VAR_anims.push(["Teste01", [[1, "K"], [1, "A"], [1, "U"]]]);
+            VAR_LoadAnimations();
+        });
+
+    }
+});
+
+// OTHERS FUNC / FILE
+const VAR_gameName = "Haxball X";
+const VAR_gameVersion = "snapshot-1.0.0";
+const VAR_gameBy = "Kauany - ARENA CUP 2022❤";
+
+let VAR_isPlaying = false;
+let VAR_defaultAnimations = [["Kauany", [[0.5, "K"], [0.5, "A"], [0.5, "U"], [0.5, "A"], [0.5, "N"], [0.5, "Y"]]], ["Arena Cup", [[0.5, "A"], [0.5, "R"], [0.5, "E"], [0.5, "N"], [0.5, "A"], [1, ""], [0.5, "C"], [0.5, "U"], [0.5, "P"]]]];
+
+// VERSION SHOW
+let VAR_loc = document.getElementsByClassName("flexRow flexGrow")[0];
+let VAR_newG = document.createElement("div");
+VAR_newG.setAttribute("class", "gameInfo");
+VAR_newG.style = "display: flex; height: content-fit; position: Absolute; bottom: 1.6vw; right: 10px;";
+let VAR_newX = document.createElement("div");
+VAR_newX.setAttribute("class", "gameInfo");
+VAR_newX.style = "display: flex; flex-flow: wrap; width: 13vw; height: content-fit; position: Absolute; bottom: 0.5vw; right: 10px; justify-content: center; align-items: center";
+
+let VAR_gameN = document.createElement("div");
+VAR_gameN.textContent = VAR_gameName;
+VAR_gameN.style = "align-items: center; justify-content: center; width: content-fit; height: content-fit; font-size: 1vw; font-family: 'Calibri'; color: rgb(255,255,255); white-space: nowrap; margin-right: 0.2vw; opacity: 50%";
+VAR_newG.appendChild(VAR_gameN);
+
+let VAR_gameV = document.createElement("div");
+VAR_gameV.textContent = "versão " + VAR_gameVersion;
+VAR_gameV.style = "align-items: center; justify-content: center;width:content-fit; height: content-fit; font-size: 1vw; font-family: 'Calibri'; color: rgb(200,200,200); white-space: nowrap; opacity: 50%";
+VAR_newG.appendChild(VAR_gameV);
+
+let VAR_gameB = document.createElement("div");
+VAR_gameB.textContent = VAR_gameBy;
+VAR_gameB.style = "align-items: center; justify-content: center;width:content-fit; height: content-fit; width: content-fit; font-size: 1vw; font-family: 'Calibri'; color: rgb(182, 57, 57); white-space: nowrap; opacity: 50%;";
+VAR_newX.appendChild(VAR_gameB);
+
+VAR_loc.appendChild(VAR_newG);
+VAR_loc.appendChild(VAR_newX);
+
+
+// +++++++ ANIMATIONS VARIAVEIS +++++++
+let VAR_animIndex = 0; // TEMP
+let VAR_kf = 0;
+let VAR_specialAnim = false;
+
+function VAR_Animation(VAR_gameDoc, VAR_oldIsPlaying) {
+    let VAR_chatTextBox = VAR_gameDoc.querySelector("body > div > div > div.bottom-section > div.chatbox-view > div.input > input[type=text]");
+    if (!VAR_chatTextBox) {
+        VAR_isPlaying = false;
+        return;
+    }
+    let VAR_chatSendButton = VAR_gameDoc.getElementsByClassName("input")[0].getElementsByTagName("button")[0];
+    let VAR_container = VAR_gameDoc.getElementsByClassName("log ps")[0];
+    let VAR_Anim = JSON.parse(localStorage.getItem("animations"));
+    let VAR_animPlaying = VAR_Anim[VAR_animIndex];
+
+    if (VAR_isPlaying == VAR_oldIsPlaying && VAR_animPlaying) {
+        let VAR_keyframes = VAR_animPlaying[1];
+        let VAR_keyframe = VAR_keyframes[VAR_kf];
+        let VAR_delay = 5000;
+        if (VAR_keyframe) { // NÃO EXISTE NENHUM KF
+            VAR_delay = VAR_keyframe[0] * 1000;
+            if (VAR_specialAnim == false && VAR_gameDoc.activeElement != VAR_chatTextBox) {
+
+                VAR_chatTextBox.value = "/avatar " + VAR_keyframe[1];
+                VAR_chatSendButton.click();
+
+                if (VAR_keyframes[VAR_kf + 1]) {
+                    VAR_kf += 1;
+                }
+                else {
+                    VAR_kf = 0;
+                }
+            }
+
+            for (let VAR_item of VAR_container.getElementsByClassName("notice")) {
+                if (VAR_item.textContent == "Avatar set") {
+                    VAR_item.remove();
+                }
+            }
+        }
+
+
+        setTimeout(() => {
+            if (VAR_isPlaying == VAR_oldIsPlaying) {
+                VAR_Animation(VAR_gameDoc, VAR_isPlaying);
+            }
+        }, VAR_delay);
+    }
+}
+
+function VAR_IsPlayFunc(VAR_valor) {
+    let VAR_isPlayingElement = VAR_gameDoc.getElementsByClassName("isPlaying")[0];
+    if (!VAR_isPlayingElement) return;
+    if (VAR_valor == true) {
+        VAR_isPlaying = new Date().getTime();
+        VAR_isPlayingElement.textContent = "Playing: SIM"
+        VAR_isPlayingElement.style = "color: rgb(170, 245, 110)";
+        VAR_kf = 0;
+        VAR_Animation(VAR_gameDoc, VAR_isPlaying);
+    } else {
+        VAR_isPlaying = false;
+        VAR_isPlayingElement.textContent = "Playing: NÃO"
+        VAR_isPlayingElement.style = "color: rgb(245, 110, 110)";
+    }
+}
+
+VAR_gameDoc.addEventListener("keydown", (VAR_e) => {
+    if (!VAR_gameDoc.getElementsByClassName("input")[0]) return;
+    let VAR_chatTextBox = VAR_gameDoc.getElementsByClassName("input")[0].getElementsByTagName("input")[0];
+    if (VAR_e.key.toUpperCase() == "G") {
+        if (VAR_gameDoc.activeElement == VAR_chatTextBox) return;
+        if (!VAR_gameDoc.getElementsByClassName("isPlaying")[0]) return;
+        if (VAR_isPlaying == false) {
+            VAR_IsPlayFunc(true);
+        } else {
+            VAR_IsPlayFunc(false);
+        }
+
+
+    } else if (VAR_e.key.toUpperCase() == "I") { // PROXIMA ANIMAÇÃO
+        let VAR_Anim = JSON.parse(localStorage.getItem("animations"));
+        if (!VAR_gameDoc.querySelector("#AnimName")) return;
+        if (VAR_Anim.length == 0) {
+            localStorage.setItem("animations", JSON.stringify(VAR_defaultAnimations));
+            VAR_Anim = VAR_defaultAnimations;
+        }
+        if (VAR_Anim[VAR_animIndex + 1]) {
+            VAR_animIndex = VAR_animIndex + 1;
+
+            VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+        } else {
+            VAR_animIndex = 0;
+            VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+        }
+        VAR_kf = 0;
+    } else if (VAR_e.key.toUpperCase() == "U") { // ANIMAÇÃO ANTERIOR
+        let VAR_Anim = JSON.parse(localStorage.getItem("animations"));
+        if (VAR_Anim.length == 0) {
+            localStorage.setItem("animations", JSON.stringify(VAR_defaultAnimations));
+            VAR_Anim = VAR_defaultAnimations;
+        }
+        if (VAR_Anim[VAR_animIndex - 1] && VAR_Anim[VAR_animIndex - 1][0]) {
+            VAR_animIndex = VAR_animIndex - 1;
+            VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+        } else {
+            VAR_animIndex = VAR_Anim.length - 1;
+            VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+        }
+        VAR_kf = 0;
+    }
+});
+
+
+async function VAR_WaitMenu() {
+    setTimeout(() => {
+        let VAR_gameView = VAR_gameDoc.getElementsByClassName("game-view")[0];
+        let VAR_gui = VAR_gameDoc.getElementsByClassName("gui")[0];
+        let VAR_roomList = VAR_gameDoc.getElementsByClassName("roomlist-view")[0];
+        let VAR_chooseNickname = VAR_gameDoc.getElementsByClassName("choose-nickname-view")[0];
+
+        if (VAR_gameView && !VAR_gui) {
+            // FOI PARA UMA SALA
+            // OCULTAR LAUCHER INFO
+            document.getElementsByClassName("gameInfo")[0].style.display = "none";
+            document.getElementsByClassName("gameInfo")[1].style.display = "none";
+            // ADICIONANDO A GUI DE ANIMAÇÕES... TEMP
+            VAR_gameDoc.querySelector("body > div:nth-child(1) > div > div.bottom-section > div.buttons").style = "width: 200px"
+            let VAR_buttonsDIV = VAR_gameDoc.querySelector("body > div:nth-child(1) > div > div.bottom-section > div.buttons");
+
+            let VAR_division = document.createElement("div");
+            VAR_division.style = "display: flex; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center;";
+            VAR_division.className = "gui";
+
+            let VAR_name = document.createElement("div");
+            VAR_name.textContent = "Anim: Ola World";
+            VAR_name.id = "AnimName";
+            VAR_name.style = "margin-bottom: 5px; font-size: 13px; font-family: calibri; "
+            VAR_division.appendChild(VAR_name);
+            let VAR_actived = document.createElement("div");
+            VAR_actived.setAttribute("class", "isPlaying");
+            VAR_actived.textContent = "Playing: NÃO";
+            VAR_actived.style = "margin-bottom: 5px; font-size: 18px; font-family: calibri; color: rgb(245,110,110)";
+            VAR_division.appendChild(VAR_actived);
+            VAR_buttonsDIV.appendChild(VAR_division);
+
+
+
+            let VAR_Anim = JSON.parse(localStorage.getItem("animations"));
+            if (VAR_Anim.length > 0) {
+                VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+            } else {
+                localStorage.setItem("animations", JSON.stringify(VAR_defaultAnimations));
+                VAR_Anim = VAR_defaultAnimations;
+                VAR_gameDoc.querySelector("#AnimName").textContent = "Anim: " + VAR_Anim[VAR_animIndex][0];
+            }
+        } else if (VAR_roomList || VAR_chooseNickname) {
+            // ESTÁ NO MENU / NÃO ESTÁ EM UMA SALA
+            let VAR_gameInfo = document.getElementsByClassName("gameInfo");
+            if (getComputedStyle(VAR_gameInfo[0]).display == "none") {
+                // MOSTRAR LAUCHER INFO
+                document.getElementsByClassName("gameInfo")[0].style.display = "flex";
+                document.getElementsByClassName("gameInfo")[1].style.display = "flex";
+            }
+        }
+        VAR_WaitMenu(VAR_gameDoc);
+    }, 100);
+}
+
+VAR_WaitMenu();
