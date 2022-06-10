@@ -33,6 +33,7 @@
         position: relative;
         height: calc(100% - 35px);
         width: 100%;
+        margin-top: 35px;
 
     }
 
@@ -46,7 +47,7 @@
         display: none;
         background-color: rgb(15, 15, 15);
         width: 100%;
-        height: calc(100%);
+        height: calc(100% -35px);
     }
 
     .createAnimButton:hover {
@@ -154,7 +155,7 @@
 
     header {
         background: rgb(24, 24, 24);
-        position: relative;
+        position: fixed;
         width: 100%;
         height: 35px;
         z-index: 10000;
