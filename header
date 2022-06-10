@@ -41,13 +41,12 @@
     }
 
     .main {
-        margin-top: 40px;
         position: absolute;
         z-index: 9000;
         display: none;
         background-color: rgb(15, 15, 15);
         width: 100%;
-        height: calc(100% - 40px);
+        height: calc(100%);
     }
 
     .createAnimButton:hover {
